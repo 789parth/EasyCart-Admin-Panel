@@ -1,6 +1,6 @@
 import { createContext, useContext, useEffect, useState } from 'react';
-import { auth, rtdb } from '../firebase';
-import { onAuthStateChanged, signInWithEmailAndPassword, signOut } from 'firebase/auth';
+import { auth, rtdb, googleProvider } from '../firebase';
+import { onAuthStateChanged, signInWithEmailAndPassword, createUserWithEmailAndPassword, signInWithPopup, signOut } from 'firebase/auth';
 import { ref, get, set } from 'firebase/database';
 
 const AuthContext = createContext();
@@ -56,6 +56,35 @@ export function AuthProvider({ children }) {
     return signInWithEmailAndPassword(auth, email, password);
   };
 
+  const register = async (email, password) => {
+    const cred = await createUserWithEmailAndPassword(auth, email, password);
+    const allAdminsSnap = await get(ref(rtdb, 'admins'));
+    const isFirstAdmin = !allAdminsSnap.exists() || allAdminsSnap.size === 0;
+    await set(ref(rtdb, 'admins/' + cred.user.uid), {
+      email: cred.user.email,
+      role: isFirstAdmin ? 'super_admin' : 'admin',
+      isActive: true,
+    });
+    return cred;
+  };
+
+  const loginWithGoogle = async () => {
+    const result = await signInWithPopup(auth, googleProvider);
+    const userRef = ref(rtdb, 'admins/' + result.user.uid);
+    const snap = await get(userRef);
+    if (!snap.exists()) {
+      const allAdminsSnap = await get(ref(rtdb, 'admins'));
+      const isFirstAdmin = !allAdminsSnap.exists() || allAdminsSnap.size === 0;
+      await set(userRef, {
+        email: result.user.email,
+        name: result.user.displayName || '',
+        role: isFirstAdmin ? 'super_admin' : 'admin',
+        isActive: true,
+      });
+    }
+    return result;
+  };
+
   const logout = () => {
     return signOut(auth);
   };
@@ -64,6 +93,8 @@ export function AuthProvider({ children }) {
     currentUser,
     userRole,
     login,
+    register,
+    loginWithGoogle,
     logout
   };
 

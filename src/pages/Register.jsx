@@ -2,23 +2,38 @@ import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
-export default function Login() {
+export default function Register() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  const { login, loginWithGoogle } = useAuth();
+  const { register, loginWithGoogle } = useAuth();
   const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (password !== confirmPassword) {
+      return setError('Passwords do not match.');
+    }
+    if (password.length < 6) {
+      return setError('Password must be at least 6 characters.');
+    }
     try {
       setError('');
       setLoading(true);
-      await login(email, password);
+      await register(email, password);
       navigate('/dashboard');
     } catch (err) {
-      setError('Failed to sign in. Please check your credentials.');
+      if (err.code === 'auth/email-already-in-use') {
+        setError('An account with this email already exists.');
+      } else if (err.code === 'auth/invalid-email') {
+        setError('Invalid email address.');
+      } else if (err.code === 'auth/weak-password') {
+        setError('Password is too weak. Use at least 6 characters.');
+      } else {
+        setError('Failed to create account. Please try again.');
+      }
       console.error(err);
     } finally {
       setLoading(false);
@@ -51,7 +66,7 @@ export default function Login() {
             EasyBasket Admin
           </h2>
           <p className="mt-2 text-center text-sm text-gray-600">
-            Sign in to access your dashboard
+            Create your admin account
           </p>
         </div>
         <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
@@ -81,12 +96,26 @@ export default function Login() {
                 id="password"
                 name="password"
                 type="password"
-                autoComplete="current-password"
+                autoComplete="new-password"
                 required
                 className="appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-[#2563EB] focus:border-[#2563EB] sm:text-sm transition-colors"
                 placeholder="••••••••"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
+              />
+            </div>
+            <div>
+              <label htmlFor="confirm-password" className="block text-sm font-medium text-gray-700 mb-1">Confirm Password</label>
+              <input
+                id="confirm-password"
+                name="confirmPassword"
+                type="password"
+                autoComplete="new-password"
+                required
+                className="appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-[#2563EB] focus:border-[#2563EB] sm:text-sm transition-colors"
+                placeholder="••••••••"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
               />
             </div>
           </div>
@@ -97,7 +126,7 @@ export default function Login() {
               disabled={loading}
               className="group relative w-full flex justify-center py-2.5 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-[#2563EB] hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#2563EB] disabled:bg-blue-400 disabled:cursor-not-allowed transition-colors"
             >
-              {loading ? 'Signing in...' : 'Sign in'}
+              {loading ? 'Creating account...' : 'Create Account'}
             </button>
           </div>
         </form>
@@ -124,14 +153,14 @@ export default function Login() {
               <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" />
               <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" />
             </svg>
-            Sign in with Google
+            Sign up with Google
           </button>
         </div>
 
         <p className="text-center text-sm text-gray-600">
-          Don&apos;t have an account?{' '}
-          <Link to="/register" className="font-medium text-[#2563EB] hover:text-blue-700 transition-colors">
-            Create one
+          Already have an account?{' '}
+          <Link to="/login" className="font-medium text-[#2563EB] hover:text-blue-700 transition-colors">
+            Sign in
           </Link>
         </p>
       </div>

@@ -1,5 +1,5 @@
 import { initializeApp } from "firebase/app";
-import { getAuth } from "firebase/auth";
+import { getAuth, GoogleAuthProvider } from "firebase/auth";
 import { getDatabase } from "firebase/database";
 
 const firebaseConfig = {
@@ -21,4 +21,6 @@ const rtdb = getDatabase(app);
 const secondaryApp = initializeApp(firebaseConfig, "Secondary");
 const secondaryAuth = getAuth(secondaryApp);
 
-export { auth, rtdb, secondaryAuth };
+const googleProvider = new GoogleAuthProvider();
+
+export { auth, rtdb, secondaryAuth, googleProvider };
